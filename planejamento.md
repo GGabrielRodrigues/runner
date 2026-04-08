@@ -1,22 +1,7 @@
-# Etapas do desenvolvimento do CLI
+Vamos reestruturar o nosso planejamento. Percebemos que a nossa estrutura anterior não cobria de forma intregral os requisitos levantados pelo professor, então decidimos dar continuidade à nossa implementação seguindo o próprio planejamento que ele deixou em seu repositório: https://github.com/kyriosdata/runner/blob/main/docs/plano-revisitado-v2.md
 
-- [x] Definir uma linguagem de programação para escrever o código do CLI;
-    - Vamos usar `shell scripting` no Linux e `CMD` no Windows.
-- [ ] Estudar os requisitos e escopo para delimitar os comandos do CLI e os argumentos;
-- [ ] configurar o github actions. Incluir assinatura em cada release.
-- [ ] Definidos os comandos, iniciar a criação dos arquivos .sh e .cmd
-    - estudar as linguagens de scripting e de programação
-    - estruturar o código às regras de negócio a serem atendidas e aos moldes do design.
-- [ ] dividir as tarefas entre os membros do grupo(usando um kanban ou algo do tipo)
-    - provável que será dividida entre sistemas(cada participante ficará responsável por um sistema operacional)
-- [ ] definir os parâmetros que o assinador deve receber para orientar sua criação.
-    - Definir como a simulação ocorrerá e quais as mensagens impressas ao usuário em cada um dos casos de uso.
-- [ ] iniciar a criação do assinador.jar
-- [ ] criar o script que verifica a instalação do java e a faz, se necessário.
-    - Para cada uma das linguagens de scripting deverá haver um script de instalação do java.
-- [ ] criação de testes para verificar todos os arquivos criados.
-    - Viabilizar testes automáticos no próprio github.
-- [ ] implementação da comunicação http
-- [ ] compilar o código fonte e executar
-- [ ] revisão do projeto
-- [ ] melhorias e adaptações.
+Para a definição de atividades, estaremos usando, também, a definição deixada pelo professor em seu repositório: https://github.com/kyriosdata/runner/blob/main/docs/sprint-1-tasks.md
+
+Como é bem provável que durante a implementação nós percebamos pontos de divergência entre a nossa ideia e o planejamento sugerido pelo professor, documentaremos aqui o que decidimos mudar.
+
++

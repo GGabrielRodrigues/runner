@@ -1,0 +1,93 @@
+name: Release - Sistema Runner
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger em tags como v0.1.0, v1.0.0, etc.
+
+permissions:
+  contents: write # Obrigatório para criar o Release e anexar arquivos
+
+jobs:
+  # T-05.2.2: Job de Testes (Gatekeeper)
+  test:
+    name: Testar em ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Go 1.25
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - name: Go Vet
+        run: go vet ./...
+      - name: Run Tests
+        run: go test ./cmd/assinatura/... -v
+
+  # T-05.2.3: Job de Build (Geração de Artefatos)
+  build:
+    name: Build para Release
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go 1.25
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Preparar Binários
+        run: |
+          VERSION=${{ github.ref_name }}
+          mkdir -p dist
+          
+          # Linux
+          GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=$VERSION" -o dist/assinatura-$VERSION-linux-amd64 ./cmd/assinatura
+          
+          # Windows
+          GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=$VERSION" -o dist/assinatura-$VERSION-windows-amd64.exe ./cmd/assinatura
+          
+          # macOS
+          GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version=$VERSION" -o dist/assinatura-$VERSION-macos-amd64 ./cmd/assinatura
+
+      - name: Gerar Checksums SHA256
+        working-directory: ./dist
+        run: |
+          sha256sum * > checksums.txt
+
+      - name: Upload Artifacts Temporários
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: dist/*
+
+  # T-05.2.4: Job de Publicação
+  publish:
+    name: Publicar no GitHub Releases
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar Artefatos
+        uses: actions/download-artifact@v4
+        with:
+          name: release-assets
+          path: ./dist
+
+      - name: Criar Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*
+          body: |
+            Release oficial do Sistema Runner ${{ github.ref_name }}.
+            
+            ### Integridade dos Arquivos
+            Verifique a integridade dos binários utilizando o arquivo `checksums.txt` anexo.
+          draft: false
+          prerelease: false

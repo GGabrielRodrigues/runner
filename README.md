@@ -159,28 +159,28 @@ Job separado do de testes, responsável pelos artefatos distribuíveis:
 
 #### T-02.1.0 — Setup do projeto Java com Maven
 
-- [ ] Criar estrutura no diretório `projetos/assinador-java`
-- [ ] Configurar `pom.xml` para Java 21 e adicionar plugin `maven-assembly-plugin` para gerar o **Fat JAR** (necessário para o CLI invocar um arquivo único)
-- [ ] Definir o nome do artefato final como `assinador.jar`
+- [x] Criar estrutura no diretório `projetos/assinador-java`
+- [x] Configurar `pom.xml` para Java 21 e adicionar plugin `maven-assembly-plugin` para gerar o **Fat JAR** (necessário para o CLI invocar um arquivo único)
+- [x] Definir o nome do artefato final como `assinador.jar`
 
 #### T-02.1.1 — Implementar Modelo de Dados (POJOs) e Interface
 
-- [ ] Criar pacotes `br.ufg.inf.hubsaude.model` e `br.ufg.inf.hubsaude.service`
-- [ ] Implementar POJOs baseados na referência FHIR (ex.: `SignatureRequest`, `SignatureResponse`)
-- [ ] Definir a interface `SignatureService` com os métodos `sign(payload)` e `validate(payload, signature)`
+- [x] Criar pacotes `br.ufg.inf.hubsaude.model` e `br.ufg.inf.hubsaude.service`
+- [x] Implementar POJOs baseados na referência FHIR (ex.: `SignatureRequest`, `SignatureResponse`)
+- [x] Definir a interface `SignatureService` com os métodos `sign(payload)` e `validate(payload, signature)`
 
 #### T-02.1.2 — Implementar `FakeSignatureService` e Validações
 
-- [ ] Criar classe `FakeSignatureService` que implementa a interface definida
-- [ ] Implementar lógica de assinatura: retornar string `SIMULATED_SIG_<hash>` para entradas válidas
-- [ ] Criar classe `RequestValidator` para verificar presença de campos obrigatórios e formatos de hash
-- [ ] Garantir que o validador lance exceções customizadas que capturem mensagens de erro legíveis
+- [x] Criar classe `FakeSignatureService` que implementa a interface definida
+- [x] Implementar lógica de assinatura: retornar string `SIMULATED_SIG_<hash>` para entradas válidas
+- [x] Criar classe `RequestValidator` para verificar presença de campos obrigatórios e formatos de hash
+- [x] Garantir que o validador lance exceções customizadas que capturem mensagens de erro legíveis
 
 #### T-02.1.3 — Implementar Interface CLI (Main) do JAR
 
-- [ ] Criar `Main.java` para interpretar argumentos de linha de comando: `java -jar assinador.jar <comando> <json>`
-- [ ] Comandos suportados: `sign` e `validate`
-- [ ] Garantir que erros de validação sejam impressos no `System.err` e resultados no `System.out`
+- [x] Criar `Main.java` para interpretar argumentos de linha de comando: `java -jar assinador.jar <comando> <json>`
+- [x] Comandos suportados: `sign` e `validate`
+- [x] Garantir que erros de validação sejam impressos no `System.err` e resultados no `System.out`
 
 #### T-02.1.4 — Testes Unitários do Assinador
 

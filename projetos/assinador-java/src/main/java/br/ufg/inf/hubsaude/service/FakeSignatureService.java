@@ -45,6 +45,6 @@ public class FakeSignatureService implements SignatureService {
         byte[] encodedHash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
         
         // HexFormat é uma utilidade do Java 17+ muito prática
-        return HexFormat.of().encodeToString(encodedHash);
-    }
+		return HexFormat.of().formatHex(encodedHash);
+	}
 }

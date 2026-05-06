@@ -184,8 +184,8 @@ Job separado do de testes, responsável pelos artefatos distribuíveis:
 
 #### T-02.1.4 — Testes Unitários do Assinador
 
-- [ ] Criar testes com JUnit 5 para `FakeSignatureService`
-- [ ] Validar cenários de erro (parâmetros nulos ou vazios) e cenário de sucesso
+- [x] Criar testes com JUnit 5 para `FakeSignatureService`
+- [x] Validar cenários de erro (parâmetros nulos ou vazios) e cenário de sucesso
 
 ---
 

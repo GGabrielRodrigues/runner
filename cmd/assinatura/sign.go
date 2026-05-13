@@ -13,9 +13,15 @@ var (
 	signInput string
 	signLocal bool
 )
-
 type RespostaAssinatura struct {
-	Hash string `json:"hash"`
+	Status        string `json:"status"`
+	SignatureHash string `json:"signatureHash"`
+	Timestamp     string `json:"timestamp"`
+}
+
+type SignatureRequest struct {
+	PayloadBase64 string `json:"payloadBase64"`
+	SignerName    string `json:"signerName"`
 }
 
 var signCmd = &cobra.Command{
@@ -23,9 +29,17 @@ var signCmd = &cobra.Command{
 	Short: "Gera uma assinatura digital",
 	Long:  `Invoca o assinador para gerar uma assinatura digital a partir de um arquivo ou string de entrada.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		jarPath := "assinador/assinador.jar"
+		req := SignatureRequest{
+			PayloadBase64: signInput, // Por enquanto enviamos a string direto, a Sprint 3/4 pode exigir base64 real
+			SignerName:    "Usuario CLI",
+		}
 
-		saidaTerminal, err := invoker.ExecutarAssinador(jarPath, "sign", signInput)
+		reqJSON, err := json.Marshal(req)
+		if err != nil {
+			return fmt.Errorf("erro ao preparar requisição: %w", err)
+		}
+
+		saidaTerminal, err := invoker.ExecutarAssinador("sign", string(reqJSON))
 
 		if err != nil {
 			return fmt.Errorf("Erro na execução do assinador:\n%w", err)
@@ -34,13 +48,13 @@ var signCmd = &cobra.Command{
 		var resp RespostaAssinatura
 
 		errParse := json.Unmarshal([]byte(saidaTerminal), &resp)
-		if errParse != nil || resp.Hash == "" {
+		if errParse != nil || resp.SignatureHash == "" {
 			saidaLimpa := strings.TrimSpace(saidaTerminal)
 			fmt.Printf("Assinatura gerada com sucesso: [%s]\n", saidaLimpa)
 			return nil
 		}
 
-		fmt.Printf("Assinatura gerada com sucesso: [%s]\n", resp.Hash)
+		fmt.Printf("Assinatura gerada com sucesso: [%s]\n", resp.SignatureHash)
 		return nil
 	},
 }

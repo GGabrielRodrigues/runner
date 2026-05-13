@@ -242,8 +242,8 @@ Job separado do de testes, responsável pelos artefatos distribuíveis:
 
 ## ## Definição de Pronto (DoD) da Sprint 2
 
-- [ ] `assinador.jar` compila com todas as dependências (Fat JAR)
-- [ ] CLI `assinatura` invoca o JAR localmente e exibe resultados sem erros de Java
-- [ ] O sistema provisiona o JDK 21 automaticamente em máquinas "virgens"
-- [ ] Testes unitários em Java e testes de integração em Go passam com > 80% de cobertura nos fluxos principais
-- [ ] Binário da Sprint 2 publicado via Tag `v0.2.0` no GitHub Releases (via pipeline herdada da Sprint 1)
+- [x] `assinador.jar` compila com todas as dependências (Fat JAR)
+- [x] CLI `assinatura` invoca o JAR localmente e exibe resultados sem erros de Java
+- [x] O sistema provisiona o JDK 21 automaticamente em máquinas "virgens"
+- [x] Testes unitários em Java e testes de integração em Go passam com > 80% de cobertura nos fluxos principais
+- [x] Binário da Sprint 2 publicado via Tag `v0.2.0` no GitHub Releases (via pipeline herdada da Sprint 1)

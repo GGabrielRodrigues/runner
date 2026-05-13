@@ -1,5 +1,8 @@
 package br.ufg.inf.hubsaude.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SignatureRequest {
     private String payloadBase64;
     private String signerName;

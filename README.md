@@ -193,20 +193,20 @@ Job separado do de testes, responsável pelos artefatos distribuíveis:
 
 #### T-01.2.1 — Implementar Parser de Comandos com Cobra
 
-- [ ] Adicionar subcomandos `sign` e `validate` ao comando `assinatura`
-- [ ] Configurar flags `--input` (caminho do arquivo ou string) e `--local` (bool, default true para esta sprint)
-- [ ] Atualizar o comando `help` para documentar os novos parâmetros
+- [x] Adicionar subcomandos `sign` e `validate` ao comando `assinatura`
+- [x] Configurar flags `--input` (caminho do arquivo ou string) e `--local` (bool, default true para esta sprint)
+- [x] Atualizar o comando `help` para documentar os novos parâmetros
 
 #### T-01.3.1 — Implementar Invocador de Processo (Executor)
 
-- [ ] Criar pacote `internal/executor` no projeto Go
-- [ ] Implementar lógica usando `os/exec` para montar e rodar: `java -jar <path_to_jar> <cmd> <params>`
-- [ ] Criar função para localizar o executável `java` (buscando primeiro em `~/.hubsaude/jdk` e depois no `PATH`)
+- [x] Criar pacote `internal/executor` no projeto Go (Implementado como `internal/invoker`)
+- [x] Implementar lógica usando `os/exec` para montar e rodar: `java -jar <path_to_jar> <cmd> <params>`
+- [x] Criar função para localizar o executável `java` (buscando primeiro em `~/.hubsaude/jdk` e depois no `PATH`)
 
 #### T-01.4.1 — Implementar Formatador de Saída e Tratamento de Erros
 
-- [ ] Criar lógica para capturar o `stderr` do processo Java e exibir como erro amigável no terminal
-- [ ] Formatar o JSON de resposta do `assinador.jar` para uma exibição em texto simples e legível (ex.: "Assinatura gerada com sucesso: [HASH]")
+- [x] Criar lógica para capturar o `stderr` do processo Java e exibir como erro amigável no terminal
+- [x] Formatar o JSON de resposta do `assinador.jar` para uma exibição em texto simples e legível (ex.: "Assinatura gerada com sucesso: [HASH]")
 
 ---
 
@@ -214,15 +214,15 @@ Job separado do de testes, responsável pelos artefatos distribuíveis:
 
 #### T-04.1.1 — Implementar Detector de Ambiente
 
-- [ ] Criar pacote `internal/env`
-- [ ] Implementar função `IsJava21Present()` que executa `java -version` e analisa a string de retorno
-- [ ] Implementar persistência de estado em `~/.hubsaude/config.json` para armazenar o caminho do JDK gerenciado
+- [x] Criar pacote `internal/env` (Implementado como `internal/jdk`)
+- [x] Implementar função `IsJava21Present()` que executa `java -version` e analisa a string de retorno
+- [x] Implementar persistência de estado em `~/.hubsaude/config.json` para armazenar o caminho do JDK gerenciado
 
 #### T-04.1.2 — Implementar Downloader e Extrator do JDK
 
-- [ ] Mapear URLs de download da API Adoptium (Eclipse Temurin) para as 3 plataformas (Windows, Linux, macOS)
-- [ ] Implementar download via `net/http` com barra de progresso simples no terminal
-- [ ] Implementar extração de `.zip` (Windows) ou `.tar.gz` (Unix) para o diretório `~/.hubsaude/jdk/`
+- [x] Mapear URLs de download da API Adoptium (Eclipse Temurin) para as 3 plataformas (Windows, Linux, macOS)
+- [x] Implementar download via `net/http` com barra de progresso simples no terminal
+- [x] Implementar extração de `.zip` (Windows) ou `.tar.gz` (Unix) para o diretório `~/.hubsaude/jdk/`
 
 ---
 
@@ -230,8 +230,8 @@ Job separado do de testes, responsável pelos artefatos distribuíveis:
 
 #### T-11.1.1 — Script de Integração Ponta-a-Ponta
 
-- [ ] Criar script `test/integration_local_test.go`
-- [ ] Cenário:
+- [x] Criar script `test/integration_local_test.go`
+- [x] Cenário:
     1. Limpar diretório `~/.hubsaude`
     2. Executar `assinatura sign --input "teste"`
     3. Verificar se o JDK foi baixado automaticamente

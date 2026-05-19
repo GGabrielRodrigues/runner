@@ -254,10 +254,10 @@ Job separado do de testes, responsável pelos artefatos distribuíveis:
 
 #### T-02.4.1 — Implementar Servidor HTTP e Endpoints
 
-* [ ] Configurar microframework leve (ex: Javalin) ou o `com.sun.net.httpserver.HttpServer` nativo no `pom.xml` para não inflar o tamanho do Fat JAR
-* [ ] Implementar classe `SignatureController` expondo as rotas `POST /sign` e `POST /validate`
-* [ ] Adaptar chamadas dos endpoints para utilizar a lógica da interface `SignatureService` já existente
-* [ ] Mapear as exceções do `RequestValidator` para códigos de status HTTP corretos (ex: `400 Bad Request`, `500 Internal Server Error`)
+* [x] Configurar microframework leve (ex: Javalin) ou o `com.sun.net.httpserver.HttpServer` nativo no `pom.xml` para não inflar o tamanho do Fat JAR
+* [x] Implementar classe `SignatureController` expondo as rotas `POST /sign` e `POST /validate`
+* [x] Adaptar chamadas dos endpoints para utilizar a lógica da interface `SignatureService` já existente
+* [x] Mapear as exceções do `RequestValidator` para códigos de status HTTP corretos (ex: `400 Bad Request`, `500 Internal Server Error`)
 
 #### T-02.5.1 — Implementar Suporte a PKCS#11
 

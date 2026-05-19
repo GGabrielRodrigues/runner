@@ -247,3 +247,76 @@ Job separado do de testes, responsável pelos artefatos distribuíveis:
 - [x] O sistema provisiona o JDK 21 automaticamente em máquinas "virgens"
 - [x] Testes unitários em Java e testes de integração em Go passam com > 80% de cobertura nos fluxos principais
 - [x] Binário da Sprint 2 publicado via Tag `v0.2.0` no GitHub Releases (via pipeline herdada da Sprint 1)
+
+---
+
+## Sprint 3 - Modo Servidor e Material Criptográfico
+
+#### T-02.4.1 — Implementar Servidor HTTP e Endpoints
+
+* [ ] Configurar microframework leve (ex: Javalin) ou o `com.sun.net.httpserver.HttpServer` nativo no `pom.xml` para não inflar o tamanho do Fat JAR
+* [ ] Implementar classe `SignatureController` expondo as rotas `POST /sign` e `POST /validate`
+* [ ] Adaptar chamadas dos endpoints para utilizar a lógica da interface `SignatureService` já existente
+* [ ] Mapear as exceções do `RequestValidator` para códigos de status HTTP corretos (ex: `400 Bad Request`, `500 Internal Server Error`)
+
+#### T-02.5.1 — Implementar Suporte a PKCS#11
+
+* [ ] Implementar leitura do argumento de linha de comando (ex: `--pkcs11-lib=<path>`) no `Main.java` para receber o caminho dinâmico do driver do host
+* [ ] Criar nova implementação `PKCS11SignatureService` configurando dinamicamente o provider `SunPKCS11` com o caminho da biblioteca recebido
+* [ ] Implementar a lógica para realizar operações criptográficas delegando para o dispositivo (token, smart card ou SoftHSM2)
+* [ ] Adicionar fallback ou mensagens de erro padronizadas caso a biblioteca PKCS#11 (ex: SoftHSM2) não seja encontrada
+* [ ] Escrever arquivo de documentação (`docs/pkcs11-setup.md`) explicando como instalar e configurar o SoftHSM2 para os testes
+
+#### T-02.4.2 — Testes de Integração e Timeouts do Assinador
+
+* [ ] Implementar captura do argumento `--timeout` no `Main.java`
+* [ ] Implementar lógica de atualização de *timestamp* a cada requisição HTTP recebida nas rotas
+* [ ] Criar *thread* em *background* no Java que checa o *timestamp* a cada minuto; se a inatividade ultrapassar o limite, executar `System.exit(0)`
+* [ ] Criar testes de integração no JUnit subindo o servidor HTTP e testando requisições contra `/sign` e `/validate`
+* [ ] Criar testes garantindo que operações envolvendo chaves simuladas via SoftHSM2 funcionem adequadamente
+
+#### T-01.5.1 — Implementar Gerenciamento de Ciclo de Vida (Servidor)
+
+* [ ] Alterar o pacote `internal/invoker` para suportar inicialização de processos Java em *background* (desatrelados do terminal do usuário)
+* [ ] Adicionar as flags globais no Cobra: `--port` (default: 8080), `--timeout` (default: 15) e `--pkcs11-lib` (para repassar ao processo Java)
+* [ ] Implementar lógica para registrar o PID e a Porta do processo em um arquivo de estado (ex: `~/.hubsaude/server.json`) após o *start*
+* [ ] Adicionar saída no CLI informando que o servidor iniciou em segundo plano
+
+#### T-01.7.1 — Implementar Detecção de Instância (Health Check)
+
+* [ ] Criar função no pacote `internal/invoker` para ler os dados (porta/PID) registrados em `~/.hubsaude/server.json`
+* [ ] Implementar requisição HTTP rápida na porta registrada (ex: `GET /health` ou ping genérico) para validar se o processo está vivo
+* [ ] Criar lógica para limpar o arquivo `server.json` silenciosamente caso o PID não exista mais ou o ping falhe (ex: quando o Java morre por timeout)
+
+#### T-01.6.1 — Implementar Cliente HTTP no CLI
+
+* [ ] Criar pacote `internal/client` (ou adaptar o invoker) para enviar payloads via requisição HTTP
+* [ ] Modificar o comando raiz para que, caso o modo local esteja desabilitado e um servidor ativo seja detectado, o CLI faça um `POST /sign` ou `POST /validate` em vez de executar o JAR diretamente
+* [ ] Tratar os retornos HTTP, parsear o JSON e manter a formatação amigável de erro no terminal (a mesma implementada na Sprint 2)
+
+#### T-01.8.1 — Implementar Comando de Interrupção
+
+* [ ] Criar novo comando no Cobra: `assinatura stop`
+* [ ] Implementar leitura da flag `--port` (ou ler a porta ativa padrão de `~/.hubsaude/server.json`)
+* [ ] Implementar encerramento enviando sinal `SIGTERM` para o PID listado (ou via endpoint de shutdown, se o dev A tiver implementado)
+* [ ] Excluir o arquivo de registro do processo (`~/.hubsaude/server.json`) e exibir mensagem de confirmação
+
+#### T-11.2.1 — Script de Integração Cliente-Servidor (Go)
+
+*(Pode ser liderado pelo Desenvolvedor B, mas exige que o executável Java do Desenvolvedor A esteja pronto)*
+
+* [ ] Criar novo arquivo de teste no pacote principal (ex: `cmd/assinatura/server_integration_test.go`)
+* [ ] Implementar Cenário de Teste:
+1. Executar `assinatura stop` (garantir estado limpo)
+2. Executar `assinatura sign --input "teste" --pkcs11-lib="<caminho_mock>"` (deve subir o servidor em background e responder via HTTP)
+3. Verificar se `~/.hubsaude/server.json` foi criado corretamente
+4. Executar `assinatura validate` verificando os logs para garantir que foi servido pelo servidor HTTP ativo
+5. Executar `assinatura stop` e checar se o processo morreu e o `.json` sumiu
+
+## Definição de Pronto (DoD) da Sprint 3
+
+* [ ] `assinador.jar` levanta servidor HTTP com rotas funcionais e gerencia limite de inatividade independentemente.
+* [ ] Interação com dispositivo via PKCS#11 está funcional através da injeção do caminho da biblioteca pelo CLI.
+* [ ] CLI gerencia ciclo de vida do Java (roda em background, reaproveita processo existente, encerra processo).
+* [ ] Comunicação entre CLI e JAR ocorre via HTTP por padrão.
+* [ ] Testes de ponta-a-ponta refletem o novo modelo com > 80% de cobertura nos fluxos principais.

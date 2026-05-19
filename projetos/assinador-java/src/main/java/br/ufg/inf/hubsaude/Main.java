@@ -1,5 +1,6 @@
 package br.ufg.inf.hubsaude;
 
+import br.ufg.inf.hubsaude.controller.SignatureController;
 import br.ufg.inf.hubsaude.exception.ValidationException;
 import br.ufg.inf.hubsaude.model.SignatureRequest;
 import br.ufg.inf.hubsaude.model.SignatureResponse;
@@ -16,43 +17,60 @@ public class Main {
 
     public static void main(String[] args) {
         // 1. Verificação básica de argumentos
-        if (args.length < 2) {
-            printError("MISSING_ARGS", "Uso esperado: java -jar assinador.jar <comando> <json>");
+        if (args.length < 1) {
+            printError("MISSING_ARGS", "Uso esperado: java -jar assinador.jar <comando> [opcoes/json]");
             System.exit(1);
         }
 
         String command = args[0];
-        String jsonInput = args[1];
 
         try {
-            // 2. Parse do JSON de entrada para o POJO
-            SignatureRequest request = mapper.readValue(jsonInput, SignatureRequest.class);
             SignatureService service = new FakeSignatureService();
 
-            // 3. Execução do comando solicitado
-            if ("sign".equalsIgnoreCase(command)) {
-                SignatureResponse response = service.sign(request);
-                System.out.println(mapper.writeValueAsString(response));
-            } 
-            else if ("validate".equalsIgnoreCase(command)) {
-                // Para o validate, precisamos da assinatura que veio no JSON
-                // O Jackson já mapeou o campo 'signatureHash' se o Go enviou
+            if ("server".equalsIgnoreCase(command)) {
+                int port = 8080;
+                // Parse porta se fornecida
+                for (int i = 1; i < args.length; i++) {
+                    if (args[i].startsWith("--port=")) {
+                        port = Integer.parseInt(args[i].substring(7));
+                    }
+                }
                 
-                // Extraímos o hash do próprio campo que adicionamos ao modelo/contrato
-                // Mas o método da interface pede o hash separado
-                String signatureToVerify = extractHashFromJson(jsonInput);
-                
-                boolean isValid = service.validate(request, signatureToVerify);
-                
-                SignatureResponse response = new SignatureResponse(
-                    isValid ? "VALID" : "INVALID",
-                    signatureToVerify,
-                    java.time.Instant.now().toString()
-                );
-                System.out.println(mapper.writeValueAsString(response));
-            } 
+                SignatureController controller = new SignatureController(service);
+                controller.startServer(port);
+                // Evita que o programa encerre imediatamente
+                Thread.currentThread().join();
+            }
             else {
-                throw new ValidationException("UNKNOWN_COMMAND", "Comando '" + command + "' não reconhecido.");
+                if (args.length < 2) {
+                    printError("MISSING_ARGS", "Para 'sign' e 'validate', forneça o JSON.");
+                    System.exit(1);
+                }
+                String jsonInput = args[1];
+                
+                // 2. Parse do JSON de entrada para o POJO
+                SignatureRequest request = mapper.readValue(jsonInput, SignatureRequest.class);
+
+                // 3. Execução do comando solicitado
+                if ("sign".equalsIgnoreCase(command)) {
+                    SignatureResponse response = service.sign(request);
+                    System.out.println(mapper.writeValueAsString(response));
+                } 
+                else if ("validate".equalsIgnoreCase(command)) {
+                    String signatureToVerify = extractHashFromJson(jsonInput);
+                    
+                    boolean isValid = service.validate(request, signatureToVerify);
+                    
+                    SignatureResponse response = new SignatureResponse(
+                        isValid ? "VALID" : "INVALID",
+                        signatureToVerify,
+                        java.time.Instant.now().toString()
+                    );
+                    System.out.println(mapper.writeValueAsString(response));
+                } 
+                else {
+                    throw new ValidationException("UNKNOWN_COMMAND", "Comando '" + command + "' não reconhecido.");
+                }
             }
 
         } catch (ValidationException e) {

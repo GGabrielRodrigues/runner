@@ -261,11 +261,11 @@ Job separado do de testes, responsável pelos artefatos distribuíveis:
 
 #### T-02.5.1 — Implementar Suporte a PKCS#11
 
-* [ ] Implementar leitura do argumento de linha de comando (ex: `--pkcs11-lib=<path>`) no `Main.java` para receber o caminho dinâmico do driver do host
-* [ ] Criar nova implementação `PKCS11SignatureService` configurando dinamicamente o provider `SunPKCS11` com o caminho da biblioteca recebido
-* [ ] Implementar a lógica para realizar operações criptográficas delegando para o dispositivo (token, smart card ou SoftHSM2)
-* [ ] Adicionar fallback ou mensagens de erro padronizadas caso a biblioteca PKCS#11 (ex: SoftHSM2) não seja encontrada
-* [ ] Escrever arquivo de documentação (`docs/pkcs11-setup.md`) explicando como instalar e configurar o SoftHSM2 para os testes
+* [x] Implementar leitura do argumento de linha de comando (ex: `--pkcs11-lib=<path>`) no `Main.java` para receber o caminho dinâmico do driver do host
+* [x] Criar nova implementação `PKCS11SignatureService` configurando dinamicamente o provider `SunPKCS11` com o caminho da biblioteca recebido
+* [x] Implementar a lógica para realizar operações criptográficas delegando para o dispositivo (token, smart card ou SoftHSM2)
+* [x] Adicionar fallback ou mensagens de erro padronizadas caso a biblioteca PKCS#11 (ex: SoftHSM2) não seja encontrada
+* [x] Escrever arquivo de documentação (`docs/pkcs11-setup.md`) explicando como instalar e configurar o SoftHSM2 para os testes
 
 #### T-02.4.2 — Testes de Integração e Timeouts do Assinador
 

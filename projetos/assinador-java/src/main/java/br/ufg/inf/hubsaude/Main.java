@@ -5,6 +5,7 @@ import br.ufg.inf.hubsaude.exception.ValidationException;
 import br.ufg.inf.hubsaude.model.SignatureRequest;
 import br.ufg.inf.hubsaude.model.SignatureResponse;
 import br.ufg.inf.hubsaude.service.FakeSignatureService;
+import br.ufg.inf.hubsaude.service.PKCS11SignatureService;
 import br.ufg.inf.hubsaude.service.SignatureService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -23,30 +24,46 @@ public class Main {
         }
 
         String command = args[0];
+        String pkcs11Lib = null;
+        String pin = null;
+        int port = 8080;
+        String jsonInput = null;
+
+        // Itera a partir do args[1] buscando as flags ou o payload JSON
+        for (int i = 1; i < args.length; i++) {
+            String arg = args[i];
+            if (arg.startsWith("--pkcs11-lib=")) {
+                pkcs11Lib = arg.substring(13);
+            } else if (arg.startsWith("--pin=")) {
+                pin = arg.substring(6);
+            } else if (arg.startsWith("--port=")) {
+                try {
+                    port = Integer.parseInt(arg.substring(7));
+                } catch (NumberFormatException ignored) {}
+            } else if (!arg.startsWith("--")) {
+                jsonInput = arg;
+            }
+        }
 
         try {
-            SignatureService service = new FakeSignatureService();
+            SignatureService service;
+            if (pkcs11Lib != null && !pkcs11Lib.isBlank()) {
+                service = new PKCS11SignatureService(pkcs11Lib, pin);
+            } else {
+                service = new FakeSignatureService();
+            }
 
             if ("server".equalsIgnoreCase(command)) {
-                int port = 8080;
-                // Parse porta se fornecida
-                for (int i = 1; i < args.length; i++) {
-                    if (args[i].startsWith("--port=")) {
-                        port = Integer.parseInt(args[i].substring(7));
-                    }
-                }
-                
                 SignatureController controller = new SignatureController(service);
                 controller.startServer(port);
                 // Evita que o programa encerre imediatamente
                 Thread.currentThread().join();
             }
             else {
-                if (args.length < 2) {
+                if (jsonInput == null) {
                     printError("MISSING_ARGS", "Para 'sign' e 'validate', forneça o JSON.");
                     System.exit(1);
                 }
-                String jsonInput = args[1];
                 
                 // 2. Parse do JSON de entrada para o POJO
                 SignatureRequest request = mapper.readValue(jsonInput, SignatureRequest.class);

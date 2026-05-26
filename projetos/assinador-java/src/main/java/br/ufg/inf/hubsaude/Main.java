@@ -27,6 +27,7 @@ public class Main {
         String pkcs11Lib = null;
         String pin = null;
         int port = 8080;
+        int timeoutMinutes = 0;
         String jsonInput = null;
 
         // Itera a partir do args[1] buscando as flags ou o payload JSON
@@ -39,6 +40,10 @@ public class Main {
             } else if (arg.startsWith("--port=")) {
                 try {
                     port = Integer.parseInt(arg.substring(7));
+                } catch (NumberFormatException ignored) {}
+            } else if (arg.startsWith("--timeout=")) {
+                try {
+                    timeoutMinutes = Integer.parseInt(arg.substring(10));
                 } catch (NumberFormatException ignored) {}
             } else if (!arg.startsWith("--")) {
                 jsonInput = arg;
@@ -55,7 +60,7 @@ public class Main {
 
             if ("server".equalsIgnoreCase(command)) {
                 SignatureController controller = new SignatureController(service);
-                controller.startServer(port);
+                controller.startServer(port, timeoutMinutes);
                 // Evita que o programa encerre imediatamente
                 Thread.currentThread().join();
             }

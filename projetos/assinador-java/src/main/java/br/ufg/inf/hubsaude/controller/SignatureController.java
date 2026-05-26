@@ -16,28 +16,72 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class SignatureController {
     private final SignatureService signatureService;
     private final ObjectMapper mapper;
+    private HttpServer server;
+    private ScheduledExecutorService timeoutExecutor;
+    private final AtomicLong lastActivityTimestamp = new AtomicLong(System.currentTimeMillis());
 
     public SignatureController(SignatureService signatureService) {
         this.signatureService = signatureService;
         this.mapper = new ObjectMapper();
     }
 
-    public void startServer(int port) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+    public void startServer(int port, int timeoutMinutes) throws IOException {
+        server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/sign", new SignHandler());
         server.createContext("/validate", new ValidateHandler());
         server.setExecutor(null);
         server.start();
         System.out.println("Servidor iniciado na porta: " + port);
+
+        if (timeoutMinutes > 0) {
+            startTimeoutThread(timeoutMinutes);
+            System.out.println("Timeout configurado para " + timeoutMinutes + " minutos.");
+        }
+    }
+
+    public void stopServer() {
+        if (server != null) {
+            server.stop(0);
+        }
+        if (timeoutExecutor != null) {
+            timeoutExecutor.shutdownNow();
+        }
+    }
+
+    private void startTimeoutThread(int timeoutMinutes) {
+        timeoutExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "Timeout-Monitor");
+            t.setDaemon(true);
+            return t;
+        });
+
+        long timeoutMillis = TimeUnit.MINUTES.toMillis(timeoutMinutes);
+
+        timeoutExecutor.scheduleAtFixedRate(() -> {
+            long idleTime = System.currentTimeMillis() - lastActivityTimestamp.get();
+            if (idleTime > timeoutMillis) {
+                System.out.println("Inatividade detectada por mais de " + timeoutMinutes + " minutos. Encerrando servidor.");
+                System.exit(0);
+            }
+        }, 1, 1, TimeUnit.MINUTES);
+    }
+
+    private void updateActivity() {
+        lastActivityTimestamp.set(System.currentTimeMillis());
     }
 
     private class SignHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            updateActivity();
             if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
                 sendMethodNotAllowed(exchange);
                 return;
@@ -59,6 +103,7 @@ public class SignatureController {
     private class ValidateHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            updateActivity();
             if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
                 sendMethodNotAllowed(exchange);
                 return;

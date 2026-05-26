@@ -269,11 +269,11 @@ Job separado do de testes, responsável pelos artefatos distribuíveis:
 
 #### T-02.4.2 — Testes de Integração e Timeouts do Assinador
 
-* [ ] Implementar captura do argumento `--timeout` no `Main.java`
-* [ ] Implementar lógica de atualização de *timestamp* a cada requisição HTTP recebida nas rotas
-* [ ] Criar *thread* em *background* no Java que checa o *timestamp* a cada minuto; se a inatividade ultrapassar o limite, executar `System.exit(0)`
-* [ ] Criar testes de integração no JUnit subindo o servidor HTTP e testando requisições contra `/sign` e `/validate`
-* [ ] Criar testes garantindo que operações envolvendo chaves simuladas via SoftHSM2 funcionem adequadamente
+* [x] Implementar captura do argumento `--timeout` no `Main.java`
+* [x] Implementar lógica de atualização de *timestamp* a cada requisição HTTP recebida nas rotas
+* [x] Criar *thread* em *background* no Java que checa o *timestamp* a cada minuto; se a inatividade ultrapassar o limite, executar `System.exit(0)`
+* [x] Criar testes de integração no JUnit subindo o servidor HTTP e testando requisições contra `/sign` e `/validate`
+* [x] Criar testes garantindo que operações envolvendo chaves simuladas via SoftHSM2 funcionem adequadamente
 
 #### T-01.5.1 — Implementar Gerenciamento de Ciclo de Vida (Servidor)
 

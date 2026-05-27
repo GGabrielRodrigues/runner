@@ -1,73 +1,75 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"strings"
+	"os"
+	"time"
 
+	"github.com/GGabrielRodrigues/runner/internal/client"
 	"github.com/GGabrielRodrigues/runner/internal/invoker"
 	"github.com/spf13/cobra"
 )
-
-var (
-	validateInput string
-	validateHash  string
-	validateLocal bool
-)
-
-type RespostaValidacao struct {
-	Status        string `json:"status"`
-	SignatureHash string `json:"signatureHash"`
-	Timestamp     string `json:"timestamp"`
-}
-
-type ValidationRequest struct {
-	PayloadBase64 string `json:"payloadBase64"`
-	SignerName    string `json:"signerName"`
-	SignatureHash string `json:"signatureHash"`
-}
+var validateInput string
 
 var validateCmd = &cobra.Command{
 	Use:   "validate",
-	Short: "Valida uma assinatura digital",
-	Long:  `Invoca o assinador para validar uma assinatura digital baseada no input fornecido.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		req := ValidationRequest{
-			PayloadBase64: validateInput,
-			SignerName:    "Usuario CLI",
-			SignatureHash: validateHash,
+	Short: "Valida a assinatura de um payload JSON",
+	Run: func(cmd *cobra.Command, args []string) {
+		if validateInput == "" {
+			fmt.Println("Erro: A flag --input é obrigatória.")
+			os.Exit(1)
+		}
+		if localMode {
+			fmt.Println("[Modo Local] Executando processo efêmero para validação...")
+			saida, err := invoker.ExecutarAssinador("validate", validateInput)
+			if err != nil {
+				fmt.Printf("Erro: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Println(saida)
+			return
+		}
+		state, vivo := invoker.ChecarServidor()
+		
+		if !vivo {
+			fmt.Println("Iniciando motor criptográfico em background para validação...")
+			err := invoker.IniciarServidor(port, timeout, pkcs11Lib)
+			if err != nil {
+				fmt.Printf("Erro ao iniciar servidor: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Print("Aguardando servidor ficar online")
+			for i := 0; i < 10; i++ {
+				time.Sleep(1 * time.Second)
+				fmt.Print(".")
+				state, vivo = invoker.ChecarServidor()
+				if vivo {
+					break
+				}
+			}
+			fmt.Println() 
+			
+			if !vivo {
+				fmt.Println("Erro: O servidor falhou ao ficar online após 10 segundos de espera.")
+				os.Exit(1)
+			}
 		}
 
-		reqJSON, err := json.Marshal(req)
+		fmt.Printf("Enviando requisição de validação (Porta: %d)...\n", state.Port)
+		httpClient := client.NewSignatureClient(state.Port)
+		
+		resultado, err := httpClient.EnviarRequisicao("validate", validateInput)
 		if err != nil {
-			return fmt.Errorf("erro ao preparar requisição: %w", err)
+			fmt.Printf("Erro na validação: %v\n", err)
+			os.Exit(1)
 		}
 
-		saidaTerminal, err := invoker.ExecutarAssinador("validate", string(reqJSON))
-
-		if err != nil {
-			return fmt.Errorf("Erro na validação da assinatura:\n%w", err)
-		}
-
-		var resp RespostaValidacao
-		errParse := json.Unmarshal([]byte(saidaTerminal), &resp)
-		if errParse != nil {
-			saidaLimpa := strings.TrimSpace(saidaTerminal)
-			fmt.Printf("Resultado da validação: %s\n", saidaLimpa)
-			return nil
-		}
-
-		fmt.Printf("Resultado da validação: [%s] (Hash: %s)\n", resp.Status, resp.SignatureHash)
-
-		return nil
+		fmt.Println("\nResultado da validação:")
+		fmt.Println(resultado)
 	},
 }
 
 func init() {
-	validateCmd.Flags().StringVar(&validateInput, "input", "", "Caminho do arquivo ou string de entrada (Obrigatório)")
-	validateCmd.Flags().StringVar(&validateHash, "hash", "", "Hash da assinatura para validar (Obrigatório)")
-	validateCmd.Flags().BoolVar(&validateLocal, "local", true, "Define se a execução será local (default true para esta sprint)")
+	validateCmd.Flags().StringVarP(&validateInput, "input", "i", "", "JSON de entrada contendo a assinatura a ser validada")
 	validateCmd.MarkFlagRequired("input")
-	validateCmd.MarkFlagRequired("hash")
 }
-

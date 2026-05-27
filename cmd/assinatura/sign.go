@@ -1,66 +1,68 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"strings"
+	"os"
+	"time"
 
-	"github.com/GGabrielRodrigues/runner/internal/invoker"
+	"github.com/GGabrielRodrigues/runner/internal/client"
+	"github.com/GGabrielRodrigues/runner/internal/invoker" // Ajuste o path de importação de acordo com seu module
 	"github.com/spf13/cobra"
 )
 
-var (
-	signInput string
-	signLocal bool
-)
-type RespostaAssinatura struct {
-	Status        string `json:"status"`
-	SignatureHash string `json:"signatureHash"`
-	Timestamp     string `json:"timestamp"`
-}
-
-type SignatureRequest struct {
-	PayloadBase64 string `json:"payloadBase64"`
-	SignerName    string `json:"signerName"`
-}
+var input string
 
 var signCmd = &cobra.Command{
 	Use:   "sign",
-	Short: "Gera uma assinatura digital",
-	Long:  `Invoca o assinador para gerar uma assinatura digital a partir de um arquivo ou string de entrada.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		req := SignatureRequest{
-			PayloadBase64: signInput, // Por enquanto enviamos a string direto, a Sprint 3/4 pode exigir base64 real
-			SignerName:    "Usuario CLI",
+	Short: "Assina um payload JSON",
+	Run: func(cmd *cobra.Command, args []string) {
+		if input == "" {
+			fmt.Println("Erro: A flag --input é obrigatória.")
+			os.Exit(1)
+		}
+		if localMode {
+			fmt.Println("[Modo Local] Executando processo efêmero...")
+			saida, err := invoker.ExecutarAssinador("sign", input)
+			if err != nil {
+				fmt.Printf("Erro: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Println(saida)
+			return
+		}
+		state, vivo := invoker.ChecarServidor()
+		
+		if !vivo {
+			fmt.Println("Iniciando motor criptográfico em background...")
+			err := invoker.IniciarServidor(port, timeout, pkcs11Lib)
+			if err != nil {
+				fmt.Printf("Erro ao iniciar servidor: %v\n", err)
+				os.Exit(1)
+			}
+			time.Sleep(2 * time.Second)
+			
+			state, vivo = invoker.ChecarServidor()
+			if !vivo {
+				fmt.Println("Erro: O servidor falhou ao ficar online após a inicialização.")
+				os.Exit(1)
+			}
 		}
 
-		reqJSON, err := json.Marshal(req)
+		fmt.Printf("Enviando requisição (Porta: %d)...\n", state.Port)
+		httpClient := client.NewSignatureClient(state.Port)
+		
+		resultado, err := httpClient.EnviarRequisicao("sign", input)
 		if err != nil {
-			return fmt.Errorf("erro ao preparar requisição: %w", err)
+			fmt.Printf("Erro na assinatura: %v\n", err)
+			os.Exit(1)
 		}
 
-		saidaTerminal, err := invoker.ExecutarAssinador("sign", string(reqJSON))
-
-		if err != nil {
-			return fmt.Errorf("Erro na execução do assinador:\n%w", err)
-		}
-
-		var resp RespostaAssinatura
-
-		errParse := json.Unmarshal([]byte(saidaTerminal), &resp)
-		if errParse != nil || resp.SignatureHash == "" {
-			saidaLimpa := strings.TrimSpace(saidaTerminal)
-			fmt.Printf("Assinatura gerada com sucesso: [%s]\n", saidaLimpa)
-			return nil
-		}
-
-		fmt.Printf("Assinatura gerada com sucesso: [%s]\n", resp.SignatureHash)
-		return nil
+		fmt.Println("\nAssinatura gerada com sucesso:")
+		fmt.Println(resultado)
 	},
 }
 
 func init() {
-	signCmd.Flags().StringVar(&signInput, "input", "", "Caminho do arquivo ou string de entrada (Obrigatório)")
-	signCmd.Flags().BoolVar(&signLocal, "local", true, "Define se a execução será local (default true para esta sprint)")
+	signCmd.Flags().StringVarP(&input, "input", "i", "", "JSON de entrada para ser assinado")
 	signCmd.MarkFlagRequired("input")
 }

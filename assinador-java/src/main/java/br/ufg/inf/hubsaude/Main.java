@@ -1,6 +1,7 @@
 package br.ufg.inf.hubsaude;
 
 import br.ufg.inf.hubsaude.model.request.SignatureRequest;
+import br.ufg.inf.hubsaude.model.request.ValidationRequest;
 import br.ufg.inf.hubsaude.model.SignatureResponse;
 import br.ufg.inf.hubsaude.model.fhir.OperationOutcome;
 import br.ufg.inf.hubsaude.service.SignatureService;
@@ -43,24 +44,28 @@ public class Main {
         }
 
         try {
-            // Instância direta para performance no modo CLI (Cold Start)
             FakeSignatureService service = new FakeSignatureService();
-            // Precisamos injetar o validador manualmente pois não estamos subindo o contexto Spring
-            // Em uma evolução, poderíamos usar um Profile do Spring para carregar o contexto leve.
             
             if (jsonInput == null) {
-                printError("MISSING_ARGS", "Forneça o JSON de entrada contendo os 8 componentes FHIR.");
+                printError("MISSING_ARGS", "Forneça o JSON de entrada contendo os componentes FHIR exigidos.");
                 System.exit(1);
             }
 
-            SignatureRequest request = mapper.readValue(jsonInput, SignatureRequest.class);
-
             if ("sign".equalsIgnoreCase(command)) {
+                SignatureRequest request = mapper.readValue(jsonInput, SignatureRequest.class);
                 SignatureResponse response = service.sign(request);
                 System.out.println(mapper.writeValueAsString(response));
             } else if ("validate".equalsIgnoreCase(command)) {
-                // Lógica de validação CLI simplificada
-                System.out.println("{\"status\":\"TODO\",\"message\":\"Validação CLI em implementação\"}");
+                ValidationRequest request = mapper.readValue(jsonInput, ValidationRequest.class);
+                boolean isValid = service.validate(request);
+                
+                OperationOutcome outcome = new OperationOutcome();
+                if (isValid) {
+                    outcome.addIssue("information", "VALID", "Assinatura válida.");
+                } else {
+                    outcome.addIssue("error", "INVALID", "Assinatura inválida.");
+                }
+                System.out.println(mapper.writeValueAsString(outcome));
             }
             System.exit(0);
 

@@ -1,7 +1,9 @@
 package br.ufg.inf.hubsaude.controller;
 
 import br.ufg.inf.hubsaude.model.request.SignatureRequest;
+import br.ufg.inf.hubsaude.model.request.ValidationRequest;
 import br.ufg.inf.hubsaude.model.SignatureResponse;
+import br.ufg.inf.hubsaude.model.fhir.OperationOutcome;
 import br.ufg.inf.hubsaude.service.SignatureService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,16 +32,16 @@ public class SignatureController {
 
     @PostMapping("/validate")
     @Operation(summary = "Validar Assinatura Digital", 
-               description = "Valida uma assinatura JWS conforme as políticas da ICP-Brasil e do Guia FHIR.")
-    public SignatureResponse validate(@RequestBody SignatureRequest request) throws Exception {
-        // Para a simulação, assumimos que o signatureHash está vindo dentro do JSON
-        // ou que a lógica do FakeSignatureService cuidará disso.
-        boolean isValid = signatureService.validate(request, "SIMULATED_SIG_MOCKED");
+               description = "Valida uma assinatura JWS conforme as políticas da ICP-Brasil e do Guia FHIR. Retorna OperationOutcome.")
+    public OperationOutcome validate(@RequestBody ValidationRequest request) throws Exception {
+        boolean isValid = signatureService.validate(request);
         
-        return new SignatureResponse(
-                isValid ? "VALID" : "INVALID",
-                "SIMULATED_SIG_MOCKED",
-                java.time.Instant.now().toString()
-        );
+        OperationOutcome outcome = new OperationOutcome();
+        if (isValid) {
+            outcome.addIssue("information", "VALID_SIGNATURE", "A assinatura digital é válida.");
+        } else {
+            outcome.addIssue("error", "INVALID_SIGNATURE", "A assinatura digital é inválida ou o conteúdo foi alterado.");
+        }
+        return outcome;
     }
 }

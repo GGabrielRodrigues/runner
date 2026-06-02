@@ -1,8 +1,10 @@
 package br.ufg.inf.hubsaude.service;
 
 import br.ufg.inf.hubsaude.model.request.SignatureRequest;
+import br.ufg.inf.hubsaude.model.request.ValidationRequest;
 import br.ufg.inf.hubsaude.model.request.CryptoMaterialConfig;
 import br.ufg.inf.hubsaude.model.request.OperationalConfig;
+import br.ufg.inf.hubsaude.model.request.ValidationConfig;
 import br.ufg.inf.hubsaude.model.SignatureResponse;
 import br.ufg.inf.hubsaude.service.validator.FHIREntryValidator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,22 +28,31 @@ class FakeSignatureServiceTest {
         ReflectionTestUtils.setField(service, "validator", validator);
     }
 
-    private SignatureRequest createValidRequest() throws Exception {
+    private SignatureRequest createValidSignRequest() throws Exception {
         SignatureRequest req = new SignatureRequest();
         req.setBundle(mapper.readTree("{\"resourceType\":\"Bundle\"}"));
         req.setProvenance(mapper.readTree("{\"resourceType\":\"Provenance\"}"));
         req.setCryptoMaterial(new CryptoMaterialConfig());
         req.setCertificates(Collections.singletonList("MII..."));
-        req.setReferenceTimestamp(1751328001L);
+        req.setReferenceTimestamp(System.currentTimeMillis() / 1000);
         req.setStrategy("iat");
         req.setSignaturePolicyId("https://fhir.saude.go.gov.br/r4/seguranca/ImplementationGuide/br.go.ses.seguranca|0.0.1");
         req.setOperationalConfig(new OperationalConfig());
         return req;
     }
 
+    private ValidationRequest createValidValidationRequest() throws Exception {
+        ValidationRequest req = new ValidationRequest();
+        req.setJwsSignature("SIMULATED_SIG_abc123");
+        req.setReferenceTimestamp(System.currentTimeMillis() / 1000);
+        req.setSignaturePolicyId("policy-uri");
+        req.setOperationalConfig(new ValidationConfig());
+        return req;
+    }
+
     @Test
     void testSign_Success() throws Exception {
-        SignatureRequest req = createValidRequest();
+        SignatureRequest req = createValidSignRequest();
         SignatureResponse response = service.sign(req);
 
         assertEquals("SUCCESS", response.getStatus());
@@ -50,10 +61,8 @@ class FakeSignatureServiceTest {
 
     @Test
     void testValidate_Success() throws Exception {
-        SignatureRequest req = createValidRequest();
-        SignatureResponse signResponse = service.sign(req);
-
-        boolean isValid = service.validate(req, signResponse.getSignatureHash());
+        ValidationRequest req = createValidValidationRequest();
+        boolean isValid = service.validate(req);
         assertTrue(isValid);
     }
 }

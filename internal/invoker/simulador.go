@@ -1,7 +1,6 @@
 package invoker
 
 import (
-	"crypto/tls"
 	"fmt"
 	"io"
 	"net"
@@ -50,65 +49,79 @@ func StartSimulador(customURL string) error {
 		return fmt.Errorf("falha ao garantir simulador.jar: %w", err)
 	}
 
-	cmd := exec.Command(javaPath, "-jar", jarPath)
-	
-	// Redirecionar logs para arquivo ou descartar para rodar em background
-	// Para simplificar agora, vamos descartar. Em produção seria bom logar em ~/.hubsaude/simulador.log
-	cmd.Stdout = nil
-	cmd.Stderr = nil
+	home, _ := os.UserHomeDir()
+	logPath := filepath.Join(home, ".hubsaude", "simulador.log")
+	// Usar O_TRUNC para limpar o log a cada nova tentativa de start, facilitando o debug
+	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return fmt.Errorf("falha ao criar arquivo de log: %w", err)
+	}
+
+	// Forçamos a porta definida na constante SimulatorPort (8443)
+	cmd := exec.Command(javaPath, "-jar", jarPath, "--server.port="+strconv.Itoa(SimulatorPort))
+	cmd.Stdout = logFile
+	cmd.Stderr = logFile
 
 	if err := cmd.Start(); err != nil {
+		logFile.Close()
 		return fmt.Errorf("falha ao iniciar simulador: %w", err)
 	}
 
 	pidPath, _ := GetSimulatorPIDPath()
 	os.WriteFile(pidPath, []byte(strconv.Itoa(cmd.Process.Pid)), 0644)
 
-	fmt.Printf("Simulador iniciado em background (PID: %d) na porta %d\n", cmd.Process.Pid, SimulatorPort)
+	fmt.Printf("Simulador iniciado em background (PID: %d). Logs em: %s\n", cmd.Process.Pid, logPath)
 	return nil
 }
 
 func GetSimuladorStatus() (string, error) {
 	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
 		Timeout: 5 * time.Second,
 	}
 
-	resp, err := client.Get(fmt.Sprintf("https://localhost:%d/api/info", SimulatorPort))
-	if err != nil {
-		return "", fmt.Errorf("simulador offline ou não responde: %w", err)
-	}
-	defer resp.Body.Close()
+	// Tentamos o endpoint da especificação
+	endpoints := []string{"/api/info", "/actuator/info", "/actuator/health"}
+	var lastErr error
 
-	body, _ := io.ReadAll(resp.Body)
-	return string(body), nil
+	for _, ep := range endpoints {
+		resp, err := client.Get(fmt.Sprintf("http://localhost:%d%s", SimulatorPort, ep))
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode == http.StatusOK {
+			body, _ := io.ReadAll(resp.Body)
+			return string(body), nil
+		}
+		lastErr = fmt.Errorf("endpoint %s retornou status %d", ep, resp.StatusCode)
+	}
+
+	return "", fmt.Errorf("não foi possível obter o status: %v", lastErr)
 }
 
 func StopSimulador() error {
 	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
 		Timeout: 5 * time.Second,
 	}
 
-	// O Spring Boot Actuator geralmente usa POST para /shutdown, mas o enunciado diz "requisição HTTP"
-	// Vamos tentar POST primeiro, se falhar tentamos GET ou sinal de sistema.
-	resp, err := client.Post(fmt.Sprintf("https://localhost:%d/shutdown", SimulatorPort), "application/json", nil)
-	if err != nil {
-		// Fallback: tentar matar o processo pelo PID
-		return killSimuladorByPID()
-	}
-	defer resp.Body.Close()
+	// Tentamos os caminhos prováveis de shutdown
+	endpoints := []string{"/shutdown", "/actuator/shutdown"}
 
-	if resp.StatusCode == http.StatusOK {
-		fmt.Println("Comando de shutdown enviado com sucesso.")
-		cleanupPIDFile()
-		return nil
+	for _, ep := range endpoints {
+		resp, err := client.Post(fmt.Sprintf("http://localhost:%d%s", SimulatorPort, ep), "application/json", nil)
+		if err == nil {
+			defer resp.Body.Close()
+			if resp.StatusCode == http.StatusOK {
+				fmt.Printf("Comando de shutdown enviado para %s com sucesso.\n", ep)
+				cleanupPIDFile()
+				return nil
+			}
+		}
 	}
 
+	// Se falhar via HTTP, matamos pelo PID
 	return killSimuladorByPID()
 }
 

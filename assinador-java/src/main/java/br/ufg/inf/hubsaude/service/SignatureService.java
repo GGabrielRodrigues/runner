@@ -1,6 +1,6 @@
 package br.ufg.inf.hubsaude.service;
 
-import br.ufg.inf.hubsaude.model.SignatureRequest;
+import br.ufg.inf.hubsaude.model.request.SignatureRequest;
 import br.ufg.inf.hubsaude.model.SignatureResponse;
 
 public interface SignatureService {

@@ -53,7 +53,7 @@ public class PKCS11SignatureService implements SignatureService {
     }
 
     @Override
-    public boolean validate(SignatureRequest request, String signatureHash) throws Exception {
+    public boolean validate(br.ufg.inf.hubsaude.model.request.ValidationRequest request) throws Exception {
         KeyStore keyStore = KeyStore.getInstance("PKCS11", pkcs11Provider);
         keyStore.load(null, pin != null ? pin.toCharArray() : null);
 
@@ -64,7 +64,10 @@ public class PKCS11SignatureService implements SignatureService {
         Signature signature = Signature.getInstance("SHA256withRSA", pkcs11Provider);
         signature.initVerify(publicKey);
 
-        signature.update(request.getBundle().toString().getBytes(StandardCharsets.UTF_8));
-        return signature.verify(Base64.getDecoder().decode(signatureHash));
+        if (request.getOriginalBundle() != null) {
+            signature.update(request.getOriginalBundle().toString().getBytes(StandardCharsets.UTF_8));
+        }
+        
+        return signature.verify(Base64.getDecoder().decode(request.getJwsSignature()));
     }
 }

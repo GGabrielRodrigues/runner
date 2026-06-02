@@ -1,6 +1,7 @@
 package br.ufg.inf.hubsaude.service;
 
 import br.ufg.inf.hubsaude.model.request.SignatureRequest;
+import br.ufg.inf.hubsaude.model.request.ValidationRequest;
 import br.ufg.inf.hubsaude.model.SignatureResponse;
 import br.ufg.inf.hubsaude.service.validator.FHIREntryValidator;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,11 +36,12 @@ public class FakeSignatureService implements SignatureService {
     }
 
     @Override
-    public boolean validate(SignatureRequest request, String signatureHash) throws Exception {
-        // Para simular, apenas verificamos se o hash do bundle corresponde à parte da assinatura
-        String payload = request.getBundle().toString();
-        String expectedHash = "SIMULATED_SIG_" + generateHash(payload);
-        return expectedHash.equals(signatureHash);
+    public boolean validate(ValidationRequest request) throws Exception {
+        // 1. Valida a entrada de verificação
+        validator.validateForVerification(request);
+
+        // 2. Simulação: Se a assinatura começar com "SIMULATED_SIG_", consideramos válida para o mock
+        return request.getJwsSignature() != null && request.getJwsSignature().startsWith("SIMULATED_SIG_");
     }
 
     private String generateHash(String input) throws NoSuchAlgorithmException {

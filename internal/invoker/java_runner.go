@@ -25,7 +25,7 @@ func LocalizarJar() (string, error) {
 	}
 
 	// Tentativa no layout de desenvolvimento atual
-	devPath := "projetos/assinador-java/target/assinador.jar"
+	devPath := "assinador-java/target/assinador.jar"
 	if _, err := os.Stat(devPath); err == nil {
 		return devPath, nil
 	}

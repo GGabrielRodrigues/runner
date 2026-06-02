@@ -1,147 +1,69 @@
 package br.ufg.inf.hubsaude.controller;
 
-import br.ufg.inf.hubsaude.model.SignatureRequest;
-import br.ufg.inf.hubsaude.model.SignatureResponse;
-import br.ufg.inf.hubsaude.service.FakeSignatureService;
+import br.ufg.inf.hubsaude.model.request.SignatureRequest;
+import br.ufg.inf.hubsaude.model.request.CryptoMaterialConfig;
+import br.ufg.inf.hubsaude.model.request.OperationalConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.util.HexFormat;
+import java.util.Collections;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@SpringBootTest
+@AutoConfigureMockMvc
 public class SignatureControllerIntegrationTest {
-    private static SignatureController controller;
-    private static final int PORT = 8089;
-    private static final String BASE_URL = "http://localhost:" + PORT;
-    private static final ObjectMapper mapper = new ObjectMapper();
 
-    @BeforeAll
-    public static void setUp() throws IOException {
-        controller = new SignatureController(new FakeSignatureService());
-        controller.startServer(PORT, 0); // Desabilita o timeout durante os testes
-    }
+    @Autowired
+    private MockMvc mockMvc;
 
-    @AfterAll
-    public static void tearDown() {
-        if (controller != null) {
-            controller.stopServer();
-        }
-    }
+    @Autowired
+    private ObjectMapper mapper;
 
-    private String generateHash(String input) throws Exception {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] encodedHash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
-        return HexFormat.of().formatHex(encodedHash);
+    private SignatureRequest createValidRequest() throws Exception {
+        SignatureRequest req = new SignatureRequest();
+        req.setBundle(mapper.readTree("{\"resourceType\":\"Bundle\"}"));
+        req.setProvenance(mapper.readTree("{\"resourceType\":\"Provenance\"}"));
+        req.setCryptoMaterial(new CryptoMaterialConfig());
+        req.setCertificates(Collections.singletonList("MII..."));
+        req.setReferenceTimestamp(1751328001L);
+        req.setStrategy("iat");
+        req.setSignaturePolicyId("https://fhir.saude.go.gov.br/r4/seguranca/ImplementationGuide/br.go.ses.seguranca|0.0.1");
+        req.setOperationalConfig(new OperationalConfig());
+        return req;
     }
 
     @Test
     public void testSignEndpointSuccess() throws Exception {
-        SignatureRequest request = new SignatureRequest();
-        request.setPayloadBase64("ZGFkb3MgZGUgdGVzdGU=");
-        request.setSignerName("Dr. Teste");
+        SignatureRequest request = createValidRequest();
+        String requestJson = mapper.writeValueAsString(request);
+
+        mockMvc.perform(post("/sign")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestJson))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.signatureHash").exists());
+    }
+
+    @Test
+    public void testSignEndpointMissingBundle() throws Exception {
+        SignatureRequest request = createValidRequest();
+        request.setBundle(null); // Provoca erro de validação
 
         String requestJson = mapper.writeValueAsString(request);
 
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/sign"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(requestJson))
-                .build();
-
-        HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-
-        assertEquals(200, response.statusCode());
-        SignatureResponse sigResponse = mapper.readValue(response.body(), SignatureResponse.class);
-        
-        String expectedHash = generateHash(request.getPayloadBase64());
-        assertEquals("SUCCESS", sigResponse.getStatus());
-        assertEquals("SIMULATED_SIG_" + expectedHash, sigResponse.getSignatureHash());
-        assertNotNull(sigResponse.getTimestamp());
-    }
-
-    @Test
-    public void testSignEndpointMissingPayload() throws Exception {
-        SignatureRequest request = new SignatureRequest();
-        request.setSignerName("Dr. Teste");
-        // Sem payloadBase64
-
-        String requestJson = mapper.writeValueAsString(request);
-
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/sign"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(requestJson))
-                .build();
-
-        HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-
-        assertEquals(400, response.statusCode());
-        assertTrue(response.body().contains("INVALID_PAYLOAD"));
-    }
-
-    @Test
-    public void testValidateEndpointValid() throws Exception {
-        String payload = "ZGFkb3MgZGUgdGVzdGU=";
-        String hash = generateHash(payload);
-        String simulatedSignature = "SIMULATED_SIG_" + hash;
-
-        // Montamos o JSON "na mão" para incluir o signatureHash (ou pode-se usar um Map)
-        String requestJson = "{\n" +
-                "  \"payloadBase64\": \"" + payload + "\",\n" +
-                "  \"signerName\": \"Dr. Teste\",\n" +
-                "  \"signatureHash\": \"" + simulatedSignature + "\"\n" +
-                "}";
-
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/validate"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(requestJson))
-                .build();
-
-        HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-
-        assertEquals(200, response.statusCode());
-        SignatureResponse sigResponse = mapper.readValue(response.body(), SignatureResponse.class);
-        assertEquals("VALID", sigResponse.getStatus());
-        assertEquals(simulatedSignature, sigResponse.getSignatureHash());
-    }
-
-    @Test
-    public void testValidateEndpointInvalid() throws Exception {
-        String payload = "ZGFkb3MgZGUgdGVzdGU=";
-        String invalidSignature = "SIMULATED_SIG_badhash123";
-
-        String requestJson = "{\n" +
-                "  \"payloadBase64\": \"" + payload + "\",\n" +
-                "  \"signerName\": \"Dr. Teste\",\n" +
-                "  \"signatureHash\": \"" + invalidSignature + "\"\n" +
-                "}";
-
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest httpRequest = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/validate"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(requestJson))
-                .build();
-
-        HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-
-        assertEquals(200, response.statusCode());
-        SignatureResponse sigResponse = mapper.readValue(response.body(), SignatureResponse.class);
-        assertEquals("INVALID", sigResponse.getStatus());
-        assertEquals(invalidSignature, sigResponse.getSignatureHash());
+        mockMvc.perform(post("/sign")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestJson))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.resourceType").value("OperationOutcome"))
+                .andExpect(jsonPath("$.issue[0].code").value("MISSING_BUNDLE"));
     }
 }

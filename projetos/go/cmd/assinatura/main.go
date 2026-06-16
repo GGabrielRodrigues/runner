@@ -11,8 +11,9 @@ var version = "dev"
 
 func main() {
 	rootCmd := &cobra.Command{
-		Use:   "assinatura",
-		Short: "Sistema Runner = Utilitário de Assinatura Digital",
+		Use:     "assinatura",
+		Short:   "Sistema Runner = Utilitário de Assinatura Digital",
+		Version: version,
 	}
 
 	versionCmd := &cobra.Command{

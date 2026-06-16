@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/GGabrielRodrigues/runner/internal/env"
 )
@@ -80,10 +81,27 @@ func EnsureArtifact(name, customURL string) (string, error) {
 		return "", fmt.Errorf("artefato desconhecido: %s", name)
 	}
 
-	localVersion, _ := os.ReadFile(versionPath)
-	if string(localVersion) == target.Version {
+	localVersionBytes, _ := os.ReadFile(versionPath)
+	localVersion := string(localVersionBytes)
+
+	if localVersion == target.Version {
 		if _, err := os.Stat(artifactPath); err == nil {
 			return artifactPath, nil
+		}
+	}
+
+	// Se já existe uma versão local diferente, pergunta antes de atualizar
+	if localVersion != "" {
+		if _, err := os.Stat(artifactPath); err == nil {
+			fmt.Printf("Uma nova versão de '%s' está disponível: %s -> %s\n", name, localVersion, target.Version)
+			fmt.Print("Deseja atualizar agora? (s/N): ")
+			var response string
+			fmt.Scanln(&response)
+			response = strings.ToLower(strings.TrimSpace(response))
+			if response != "s" && response != "sim" {
+				fmt.Printf("Mantendo versão local %s de %s.\n", localVersion, name)
+				return artifactPath, nil
+			}
 		}
 	}
 

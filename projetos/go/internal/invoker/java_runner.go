@@ -9,6 +9,7 @@ import (
 
 	"github.com/GGabrielRodrigues/runner/internal/env"
 	"github.com/GGabrielRodrigues/runner/internal/jdk"
+	"github.com/GGabrielRodrigues/runner/internal/release"
 )
 
 func LocalizarJar() (string, error) {
@@ -63,9 +64,14 @@ func ExecutarAssinador(comando, input string) (string, error) {
 		return "", err
 	}
 
-	jarPath, err := LocalizarJar()
+	// Tenta garantir a versão mais recente via release.json
+	jarPath, err := release.EnsureArtifact("assinador", "")
 	if err != nil {
-		return "", err
+		// Se falhar (ex: sem internet e sem versão gerenciada), tenta localizar localmente (dev)
+		jarPath, err = LocalizarJar()
+		if err != nil {
+			return "", err
+		}
 	}
 
 	cmd := exec.Command(javaPath, "-jar", jarPath, comando, input)

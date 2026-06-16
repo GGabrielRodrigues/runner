@@ -1,5 +1,7 @@
 package br.ufg.inf.hubsaude.model.request;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.util.ArrayList;
 import java.util.List;
 
 public class OperationalConfig {
@@ -10,19 +12,29 @@ public class OperationalConfig {
     private MiddlewareCryptoConfig middlewareCrypto;
 
     // Getters and Setters
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public VerificationConfig getVerification() { return verification; }
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setVerification(VerificationConfig verification) { this.verification = verification; }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public TrustStoreConfig getTrustStore() { return trustStore; }
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setTrustStore(TrustStoreConfig trustStore) { this.trustStore = trustStore; }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public TemporalPolicyConfig getTemporalPolicy() { return temporalPolicy; }
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setTemporalPolicy(TemporalPolicyConfig temporalPolicy) { this.temporalPolicy = temporalPolicy; }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public SecurityConfig getSecurity() { return security; }
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setSecurity(SecurityConfig security) { this.security = security; }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public MiddlewareCryptoConfig getMiddlewareCrypto() { return middlewareCrypto; }
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setMiddlewareCrypto(MiddlewareCryptoConfig middlewareCrypto) { this.middlewareCrypto = middlewareCrypto; }
 
     public static class VerificationConfig {
@@ -138,8 +150,8 @@ public class OperationalConfig {
             public void setSlotId(Integer slotId) { this.slotId = slotId; }
             public String getTokenLabel() { return tokenLabel; }
             public void setTokenLabel(String tokenLabel) { this.tokenLabel = tokenLabel; }
-            public List<String> getMecanismos() { return mecanismos; }
-            public void setMecanismos(List<String> mecanismos) { this.mecanismos = mecanismos; }
+            public List<String> getMecanismos() { return mecanismos == null ? null : new ArrayList<>(mecanismos); }
+            public void setMecanismos(List<String> mecanismos) { this.mecanismos = mecanismos == null ? null : new ArrayList<>(mecanismos); }
         }
 
         public static class Sessao {
@@ -167,13 +179,24 @@ public class OperationalConfig {
         }
 
         // Getters/Setters para MiddlewareCryptoConfig
+        @SuppressFBWarnings("EI_EXPOSE_REP")
         public Biblioteca getBiblioteca() { return biblioteca; }
+        @SuppressFBWarnings("EI_EXPOSE_REP2")
         public void setBiblioteca(Biblioteca biblioteca) { this.biblioteca = biblioteca; }
+
+        @SuppressFBWarnings("EI_EXPOSE_REP")
         public Pkcs11 getPkcs11() { return pkcs11; }
+        @SuppressFBWarnings("EI_EXPOSE_REP2")
         public void setPkcs11(Pkcs11 pkcs11) { this.pkcs11 = pkcs11; }
+
+        @SuppressFBWarnings("EI_EXPOSE_REP")
         public Sessao getSessao() { return sessao; }
+        @SuppressFBWarnings("EI_EXPOSE_REP2")
         public void setSessao(Sessao sessao) { this.sessao = sessao; }
+
+        @SuppressFBWarnings("EI_EXPOSE_REP")
         public Conectividade getConectividade() { return conectividade; }
+        @SuppressFBWarnings("EI_EXPOSE_REP2")
         public void setConectividade(Conectividade conectividade) { this.conectividade = conectividade; }
     }
 }

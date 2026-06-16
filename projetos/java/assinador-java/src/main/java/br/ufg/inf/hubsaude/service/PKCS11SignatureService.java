@@ -8,7 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.Base64;
 
-public class PKCS11SignatureService implements SignatureService {
+public final class PKCS11SignatureService implements SignatureService {
 
     private final String libraryPath;
     private final String pin;

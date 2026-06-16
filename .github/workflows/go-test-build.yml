@@ -25,11 +25,13 @@ jobs:
           go-version: '1.25'
 
       - name: Go Vet (Análise Estática)
-        run: go vet ./projetos/go/...
+        working-directory: projetos/go
+        run: go vet ./...
 
       - name: Executar Testes de Aceitação
         # Isso vai rodar o version_test.go em cada OS
-        run: go test ./projetos/go/cmd/assinatura/... -v
+        working-directory: projetos/go
+        run: go test ./cmd/assinatura/... -v
 
   # T-05.1.3: Job de Cross-Compilation
   build:
@@ -47,14 +49,19 @@ jobs:
           go-version: '1.25'
 
       - name: Compilar para Linux (amd64)
-        run: GOOS=linux GOARCH=amd64 go build -o dist/assinatura-linux-amd64 ./projetos/go/cmd/assinatura
+        working-directory: projetos/go
+        run: |
+          mkdir -p ../../dist
+          GOOS=linux GOARCH=amd64 go build -o ../../dist/assinatura-linux-amd64 ./cmd/assinatura
 
       - name: Compilar para Windows (amd64)
         # Nota: Windows precisa do .exe
-        run: GOOS=windows GOARCH=amd64 go build -o dist/assinatura-windows-amd64.exe ./projetos/go/cmd/assinatura
+        working-directory: projetos/go
+        run: GOOS=windows GOARCH=amd64 go build -o ../../dist/assinatura-windows-amd64.exe ./cmd/assinatura
 
       - name: Compilar para macOS (amd64)
-        run: GOOS=darwin GOARCH=amd64 go build -o dist/assinatura-macos-amd64 ./projetos/go/cmd/assinatura
+        working-directory: projetos/go
+        run: GOOS=darwin GOARCH=amd64 go build -o ../../dist/assinatura-macos-amd64 ./cmd/assinatura
 
       # T-05.1.4: Publicar artefatos do workflow
       - name: Upload Artifacts

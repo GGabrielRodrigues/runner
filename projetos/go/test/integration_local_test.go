@@ -6,24 +6,31 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/GGabrielRodrigues/runner/internal/env"
 )
 
 func TestIntegrationLocal(t *testing.T) {
-	// Criar diretório temporário para simular o HOME
-	tempHome, err := os.MkdirTemp("", "runner-test-home-*")
+	// Criar diretório temporário para simular o HOME e dados
+	tempDir, err := os.MkdirTemp("", "runner-test-*")
 	if err != nil {
-		t.Fatalf("falha ao criar HOME temporário: %v", err)
+		t.Fatalf("falha ao criar diretório temporário: %v", err)
 	}
-	defer os.RemoveAll(tempHome)
+	defer os.RemoveAll(tempDir)
 
-	// Configurar variável de ambiente HOME (e USERPROFILE no Windows)
-	originalHome := os.Getenv("HOME")
-	os.Setenv("HOME", tempHome)
-	defer os.Setenv("HOME", originalHome)
-	
-	originalUserProfile := os.Getenv("USERPROFILE")
-	os.Setenv("USERPROFILE", tempHome)
-	defer os.Setenv("USERPROFILE", originalUserProfile)
+	// Configurar variáveis de ambiente para isolar o teste
+	envs := map[string]string{
+		"HOME":          tempDir,
+		"USERPROFILE":   tempDir,
+		"XDG_DATA_HOME": filepath.Join(tempDir, "share"),
+		"LOCALAPPDATA":  filepath.Join(tempDir, "local"),
+	}
+
+	for k, v := range envs {
+		original := os.Getenv(k)
+		defer os.Setenv(k, original)
+		os.Setenv(k, v)
+	}
 
 	// Pegar o diretório raiz do projeto para rodar o 'go run'
 	projectRoot, err := os.Getwd()
@@ -33,9 +40,7 @@ func TestIntegrationLocal(t *testing.T) {
 	// Como estamos em 'test/', a raiz é o pai
 	projectRoot = filepath.Dir(projectRoot)
 
-	// 1. Executar sign (deve disparar download do JDK se não estiver no PATH, 
-	// mas como estamos num ambiente de dev, o PATH provavelmente tem Java. 
-	// No entanto, o teste garante que o fluxo completa.)
+	// 1. Executar sign
 	cmdSign := exec.Command("go", "run", "./cmd/assinatura", "sign", "--input", "teste-integracao")
 	cmdSign.Dir = projectRoot
 	
@@ -49,10 +54,10 @@ func TestIntegrationLocal(t *testing.T) {
 		t.Errorf("Saída inesperada do sign: %s", output)
 	}
 
-	// Verificar se ~/.hubsaude foi criado
-	hubsaudeDir := filepath.Join(tempHome, ".hubsaude")
+	// Verificar se o diretório hubsaude foi criado (usando a nova lógica)
+	hubsaudeDir := env.GetHubSaudeDir()
 	if _, err := os.Stat(hubsaudeDir); os.IsNotExist(err) {
-		t.Errorf("Diretório .hubsaude não foi criado em %s", tempHome)
+		t.Errorf("Diretório hubsaude não foi criado em %s", hubsaudeDir)
 	}
 
 	// Extrair o hash para o teste de validação

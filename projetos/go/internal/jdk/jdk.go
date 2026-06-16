@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"github.com/GGabrielRodrigues/runner/internal/env"
 )
 
 type Config struct {
@@ -20,11 +21,7 @@ type Config struct {
 }
 
 func saveConfig(jdkPath string) error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return err
-	}
-	configDir := filepath.Join(home, ".hubsaude")
+	configDir := env.GetHubSaudeDir()
 	configPath := filepath.Join(configDir, "config.json")
 	
 	if err := os.MkdirAll(configDir, 0755); err != nil {
@@ -41,11 +38,7 @@ func saveConfig(jdkPath string) error {
 }
 
 func loadConfig() (*Config, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-	configPath := filepath.Join(home, ".hubsaude", "config.json")
+	configPath := filepath.Join(env.GetHubSaudeDir(), "config.json")
 
 	data, err := os.ReadFile(configPath)
 	if err != nil {
@@ -90,11 +83,6 @@ func IsJava21Present() (string, bool) {
 }
 
 func getManagedJavaPath() (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-
 	javaBin := "java"
 	if runtime.GOOS == "windows" {
 		javaBin = "java.exe"
@@ -102,7 +90,7 @@ func getManagedJavaPath() (string, error) {
 
 	// We expect the JDK to be extracted such that bin/java is directly under ~/.hubsaude/jdk
 	// But usually tarballs have a top-level directory. We'll handle that in extraction.
-	return filepath.Join(home, ".hubsaude", "jdk", "bin", javaBin), nil
+	return filepath.Join(env.GetHubSaudeDir(), "jdk", "bin", javaBin), nil
 }
 
 func verifyJavaVersion(javaPath string) bool {
@@ -138,12 +126,7 @@ func GetJDKURL() string {
 
 // ProvisionJDK downloads and extracts the JDK to ~/.hubsaude/jdk
 func ProvisionJDK() error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return err
-	}
-
-	baseDir := filepath.Join(home, ".hubsaude")
+	baseDir := env.GetHubSaudeDir()
 	jdkDir := filepath.Join(baseDir, "jdk")
 
 	if err := os.MkdirAll(baseDir, 0755); err != nil {

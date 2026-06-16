@@ -1,5 +1,6 @@
 package br.ufg.inf.hubsaude.model.fhir;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,8 +15,8 @@ public class OperationOutcome {
     // Getters and Setters
     public String getResourceType() { return resourceType; }
     public void setResourceType(String resourceType) { this.resourceType = resourceType; }
-    public List<Issue> getIssue() { return issue; }
-    public void setIssue(List<Issue> issue) { this.issue = issue; }
+    public List<Issue> getIssue() { return issue == null ? null : new java.util.ArrayList<>(issue); }
+    public void setIssue(List<Issue> issue) { this.issue = issue == null ? null : new java.util.ArrayList<>(issue); }
 
     public static class Issue {
         private String severity; // fatal, error, warning, information
@@ -33,7 +34,11 @@ public class OperationOutcome {
         public void setSeverity(String severity) { this.severity = severity; }
         public String getCode() { return code; }
         public void setCode(String code) { this.code = code; }
+
+        @SuppressFBWarnings("EI_EXPOSE_REP")
         public Details getDetails() { return details; }
+
+        @SuppressFBWarnings("EI_EXPOSE_REP2")
         public void setDetails(Details details) { this.details = details; }
 
         public static class Details {

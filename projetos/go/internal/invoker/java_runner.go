@@ -7,16 +7,14 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/GGabrielRodrigues/runner/internal/env"
 	"github.com/GGabrielRodrigues/runner/internal/jdk"
 )
 
 func LocalizarJar() (string, error) {
-	home, err := os.UserHomeDir()
-	if err == nil {
-		managedPath := filepath.Join(home, ".hubsaude", "assinador.jar")
-		if _, err := os.Stat(managedPath); err == nil {
-			return managedPath, nil
-		}
+	managedPath := filepath.Join(env.GetHubSaudeDir(), "assinador.jar")
+	if _, err := os.Stat(managedPath); err == nil {
+		return managedPath, nil
 	}
 
 	// Tentativa no layout especificado
@@ -24,10 +22,16 @@ func LocalizarJar() (string, error) {
 		return "assinador/assinador.jar", nil
 	}
 
-	// Tentativa no layout de desenvolvimento atual
-	devPath := "assinador-java/target/assinador.jar"
-	if _, err := os.Stat(devPath); err == nil {
-		return devPath, nil
+	// Tentativa no layout de desenvolvimento atual (dentro do monorepo)
+	devPaths := []string{
+		"assinador-java/target/assinador.jar",
+		"../java/assinador-java/target/assinador.jar",
+		"../../projetos/java/assinador-java/target/assinador.jar",
+	}
+	for _, devPath := range devPaths {
+		if _, err := os.Stat(devPath); err == nil {
+			return devPath, nil
+		}
 	}
 
 	return "", fmt.Errorf("assinador.jar não encontrado")

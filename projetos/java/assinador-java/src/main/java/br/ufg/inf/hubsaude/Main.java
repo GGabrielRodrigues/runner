@@ -20,7 +20,7 @@ public class Main {
 
     public static void main(String[] args) {
         if (isCliMode(args)) {
-            runCliMode(args);
+            System.exit(runCliMode(args));
         } else {
             SpringApplication.run(Main.class, args);
         }
@@ -28,11 +28,11 @@ public class Main {
 
     private static boolean isCliMode(String[] args) {
         if (args.length == 0) return false;
-        String cmd = args[0].toLowerCase();
+        String cmd = args[0].toLowerCase(java.util.Locale.ROOT);
         return cmd.equals("sign") || cmd.equals("validate");
     }
 
-    private static void runCliMode(String[] args) {
+    private static int runCliMode(String[] args) {
         String command = args[0];
         String jsonInput = null;
 
@@ -48,7 +48,7 @@ public class Main {
             
             if (jsonInput == null) {
                 printError("MISSING_ARGS", "Forneça o JSON de entrada contendo os componentes FHIR exigidos.");
-                System.exit(1);
+                return 1;
             }
 
             if ("sign".equalsIgnoreCase(command)) {
@@ -67,11 +67,11 @@ public class Main {
                 }
                 System.out.println(mapper.writeValueAsString(outcome));
             }
-            System.exit(0);
+            return 0;
 
         } catch (Exception e) {
             printError("VALIDATION_ERROR", e.getMessage());
-            System.exit(1);
+            return 1;
         }
     }
 

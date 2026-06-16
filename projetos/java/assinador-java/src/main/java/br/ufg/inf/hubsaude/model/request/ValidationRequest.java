@@ -1,6 +1,7 @@
 package br.ufg.inf.hubsaude.model.request;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 public class ValidationRequest {
     private String jwsSignature; // Base64 FHIR standard
@@ -13,8 +14,13 @@ public class ValidationRequest {
     // Getters and Setters
     public String getJwsSignature() { return jwsSignature; }
     public void setJwsSignature(String jwsSignature) { this.jwsSignature = jwsSignature; }
+    
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public ValidationConfig getOperationalConfig() { return operationalConfig; }
+    
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setOperationalConfig(ValidationConfig operationalConfig) { this.operationalConfig = operationalConfig; }
+    
     public Long getReferenceTimestamp() { return referenceTimestamp; }
     public void setReferenceTimestamp(Long referenceTimestamp) { this.referenceTimestamp = referenceTimestamp; }
     public String getSignaturePolicyId() { return signaturePolicyId; }

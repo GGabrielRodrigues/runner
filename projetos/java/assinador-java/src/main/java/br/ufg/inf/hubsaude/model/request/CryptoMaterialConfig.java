@@ -1,5 +1,7 @@
 package br.ufg.inf.hubsaude.model.request;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public class CryptoMaterialConfig {
     private PemConfig pem;
     private Pkcs12Config pkcs12;
@@ -8,19 +10,29 @@ public class CryptoMaterialConfig {
     private RemoteConfig remote;
 
     // Getters and Setters
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public PemConfig getPem() { return pem; }
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setPem(PemConfig pem) { this.pem = pem; }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public Pkcs12Config getPkcs12() { return pkcs12; }
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setPkcs12(Pkcs12Config pkcs12) { this.pkcs12 = pkcs12; }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public Pkcs11Config getSmartcard() { return smartcard; }
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setSmartcard(Pkcs11Config smartcard) { this.smartcard = smartcard; }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public Pkcs11Config getToken() { return token; }
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setToken(Pkcs11Config token) { this.token = token; }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public RemoteConfig getRemote() { return remote; }
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setRemote(RemoteConfig remote) { this.remote = remote; }
 
     public static class PemConfig {

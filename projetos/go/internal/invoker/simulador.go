@@ -12,17 +12,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/GGabrielRodrigues/runner/internal/env"
 	"github.com/GGabrielRodrigues/runner/internal/release"
 )
 
 const SimulatorPort = 8443
 
 func GetSimulatorPIDPath() (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(home, ".hubsaude", "simulador.pid"), nil
+	return filepath.Join(env.GetHubSaudeDir(), "simulador.pid"), nil
 }
 
 func IsPortAvailable(port int) bool {
@@ -49,8 +46,7 @@ func StartSimulador(customURL string) error {
 		return fmt.Errorf("falha ao garantir simulador.jar: %w", err)
 	}
 
-	home, _ := os.UserHomeDir()
-	logPath := filepath.Join(home, ".hubsaude", "simulador.log")
+	logPath := filepath.Join(env.GetHubSaudeDir(), "simulador.log")
 	// Usar O_TRUNC para limpar o log a cada nova tentativa de start, facilitando o debug
 	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {

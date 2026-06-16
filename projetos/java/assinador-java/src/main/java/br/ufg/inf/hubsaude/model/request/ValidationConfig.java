@@ -1,5 +1,7 @@
 package br.ufg.inf.hubsaude.model.request;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ValidationConfig {
@@ -40,12 +42,17 @@ public class ValidationConfig {
     }
 
     // Getters and Setters
-    public List<String> getTrustStoreIcpBrasil() { return trustStoreIcpBrasil; }
-    public void setTrustStoreIcpBrasil(List<String> trustStoreIcpBrasil) { this.trustStoreIcpBrasil = trustStoreIcpBrasil; }
+    public List<String> getTrustStoreIcpBrasil() { return trustStoreIcpBrasil == null ? null : new ArrayList<>(trustStoreIcpBrasil); }
+    public void setTrustStoreIcpBrasil(List<String> trustStoreIcpBrasil) { this.trustStoreIcpBrasil = trustStoreIcpBrasil == null ? null : new ArrayList<>(trustStoreIcpBrasil); }
+
     public Long getMinCertIssueDate() { return minCertIssueDate; }
     public void setMinCertIssueDate(Long minCertIssueDate) { this.minCertIssueDate = minCertIssueDate; }
+
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public Timeouts getTimeouts() { return timeouts; }
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setTimeouts(Timeouts timeouts) { this.timeouts = timeouts; }
+
     public Long getRevocationCacheTtl() { return revocationCacheTtl; }
     public void setRevocationCacheTtl(Long revocationCacheTtl) { this.revocationCacheTtl = revocationCacheTtl; }
     public Integer getNearExpiryThresholdDays() { return nearExpiryThresholdDays; }
@@ -56,6 +63,9 @@ public class ValidationConfig {
     public void setRevocationPolicy(String revocationPolicy) { this.revocationPolicy = revocationPolicy; }
     public String getOcspUnknownHandling() { return ocspUnknownHandling; }
     public void setOcspUnknownHandling(String ocspUnknownHandling) { this.ocspUnknownHandling = ocspUnknownHandling; }
+
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public SecurityLimits getSecurityLimits() { return securityLimits; }
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setSecurityLimits(SecurityLimits securityLimits) { this.securityLimits = securityLimits; }
 }

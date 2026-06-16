@@ -65,7 +65,6 @@ class InactivityMonitor {
         if (idleTime > (long) timeoutMinutes * 60 * 1000) {
             System.out.println("Inatividade detectada por " + timeoutMinutes + " minutos. Encerrando servidor.");
             SpringApplication.exit(context, () -> 0);
-            System.exit(0);
         }
     }
 }

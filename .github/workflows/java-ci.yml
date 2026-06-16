@@ -5,7 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'projetos/java/assinador-java/**'
-      - '.github/workflows/java-static-analysis.yml'
+      - '.github/workflows/java-ci.yml'
 
 jobs:
   build-and-test:

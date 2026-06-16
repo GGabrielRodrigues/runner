@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/GGabrielRodrigues/runner/internal/env"
 )
 
 const ReleaseURL = "https://raw.githubusercontent.com/GGabrielRodrigues/runner/main/release.json"
@@ -41,11 +43,7 @@ func FetchReleaseInfo() (*ReleaseInfo, error) {
 }
 
 func EnsureArtifact(name, customURL string) (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	baseDir := filepath.Join(home, ".hubsaude")
+	baseDir := env.GetHubSaudeDir()
 	artifactPath := filepath.Join(baseDir, name+".jar")
 	versionPath := filepath.Join(baseDir, name+".version")
 

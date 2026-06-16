@@ -1,0 +1,28 @@
+name: Java Static Analysis
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'projetos/java/assinador-java/**'
+      - '.github/workflows/java-static-analysis.yml'
+
+jobs:
+  build-and-test:
+    name: Static Analysis, Test and Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run Analysis, Tests and Build
+        working-directory: projetos/java/assinador-java
+        run: mvn verify

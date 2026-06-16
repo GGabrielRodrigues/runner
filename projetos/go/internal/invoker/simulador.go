@@ -16,7 +16,7 @@ import (
 	"github.com/GGabrielRodrigues/runner/internal/release"
 )
 
-const SimulatorPort = 8443
+const DefaultSimulatorPort = 8443
 
 func GetSimulatorPIDPath() (string, error) {
 	return filepath.Join(env.GetHubSaudeDir(), "simulador.pid"), nil
@@ -31,9 +31,9 @@ func IsPortAvailable(port int) bool {
 	return true
 }
 
-func StartSimulador(customURL string) error {
-	if !IsPortAvailable(SimulatorPort) {
-		return fmt.Errorf("porta %d já está em uso", SimulatorPort)
+func StartSimulador(customURL string, port int) error {
+	if !IsPortAvailable(port) {
+		return fmt.Errorf("porta %d já está em uso", port)
 	}
 
 	javaPath, err := LocalizarJava()
@@ -53,8 +53,8 @@ func StartSimulador(customURL string) error {
 		return fmt.Errorf("falha ao criar arquivo de log: %w", err)
 	}
 
-	// Forçamos a porta definida na constante SimulatorPort (8443)
-	cmd := exec.Command(javaPath, "-jar", jarPath, "--server.port="+strconv.Itoa(SimulatorPort))
+	// Forçamos a porta definida
+	cmd := exec.Command(javaPath, "-jar", jarPath, "--server.port="+strconv.Itoa(port))
 	cmd.Stdout = logFile
 	cmd.Stderr = logFile
 
@@ -67,10 +67,75 @@ func StartSimulador(customURL string) error {
 	os.WriteFile(pidPath, []byte(strconv.Itoa(cmd.Process.Pid)), 0644)
 
 	fmt.Printf("Simulador iniciado em background (PID: %d). Logs em: %s\n", cmd.Process.Pid, logPath)
+	fmt.Println("Aguardando o simulador estar pronto (readiness check)...")
+
+	if err := WaitForReadiness(30*time.Minute, port); err != nil {
+		return fmt.Errorf("simulador iniciado mas não ficou pronto a tempo: %w", err)
+	}
+
+	fmt.Println("Simulador está pronto para uso.")
 	return nil
 }
 
-func GetSimuladorStatus() (string, error) {
+// IsReady checks if the simulator is fully ready to handle requests.
+func IsReady(port int) bool {
+	client := &http.Client{
+		Timeout: 2 * time.Second,
+	}
+
+	// Endpoints prioritários para readiness
+	readinessEndpoints := []string{
+		"/actuator/health/readiness", // Padrão Spring Boot 2.3+
+		"/actuator/health",           // Fallback comum
+		"/api/info",                  // Mencionado na especificação
+	}
+
+	for _, ep := range readinessEndpoints {
+		resp, err := client.Get(fmt.Sprintf("http://localhost:%d%s", port, ep))
+		if err != nil {
+			continue
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode == http.StatusOK {
+			// No caso do /actuator/health, verificamos se o status é "UP"
+			if strings.Contains(ep, "health") {
+				body, _ := io.ReadAll(resp.Body)
+				if strings.Contains(strings.ToUpper(string(body)), "\"UP\"") {
+					return true
+				}
+				continue
+			}
+			return true
+		}
+	}
+	return false
+}
+
+// WaitForReadiness waits for the simulator to be ready using exponential backoff.
+func WaitForReadiness(timeout time.Duration, port int) error {
+	start := time.Now()
+	interval := 1 * time.Second
+	maxInterval := 30 * time.Second
+
+	for time.Since(start) < timeout {
+		if IsReady(port) {
+			return nil
+		}
+
+		fmt.Printf("Simulador ainda não está pronto na porta %d. Tentando novamente em %v...\n", port, interval)
+		time.Sleep(interval)
+
+		interval *= 2
+		if interval > maxInterval {
+			interval = maxInterval
+		}
+	}
+
+	return fmt.Errorf("timeout de %v atingido aguardando o simulador na porta %d", timeout, port)
+}
+
+func GetSimuladorStatus(port int) (string, error) {
 	client := &http.Client{
 		Timeout: 5 * time.Second,
 	}
@@ -80,7 +145,7 @@ func GetSimuladorStatus() (string, error) {
 	var lastErr error
 
 	for _, ep := range endpoints {
-		resp, err := client.Get(fmt.Sprintf("http://localhost:%d%s", SimulatorPort, ep))
+		resp, err := client.Get(fmt.Sprintf("http://localhost:%d%s", port, ep))
 		if err != nil {
 			lastErr = err
 			continue
@@ -97,7 +162,7 @@ func GetSimuladorStatus() (string, error) {
 	return "", fmt.Errorf("não foi possível obter o status: %v", lastErr)
 }
 
-func StopSimulador() error {
+func StopSimulador(port int) error {
 	client := &http.Client{
 		Timeout: 5 * time.Second,
 	}
@@ -106,11 +171,11 @@ func StopSimulador() error {
 	endpoints := []string{"/shutdown", "/actuator/shutdown"}
 
 	for _, ep := range endpoints {
-		resp, err := client.Post(fmt.Sprintf("http://localhost:%d%s", SimulatorPort, ep), "application/json", nil)
+		resp, err := client.Post(fmt.Sprintf("http://localhost:%d%s", port, ep), "application/json", nil)
 		if err == nil {
 			defer resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
-				fmt.Printf("Comando de shutdown enviado para %s com sucesso.\n", ep)
+				fmt.Printf("Comando de shutdown enviado para %s com sucesso na porta %d.\n", ep, port)
 				cleanupPIDFile()
 				return nil
 			}

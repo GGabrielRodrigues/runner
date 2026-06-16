@@ -2,6 +2,44 @@
 
 Todos os marcos e alterações relevantes do projeto serão documentados aqui. Este projeto segue o [Versionamento Semântico (SemVer)](https://semver.org/lang/pt-BR/).
 
+## [0.2.0] - 2026-06-16
+
+### 🛠️ Sprint 2: Refatoração, Modo Local e Padrões de SO
+
+Nesta iteração, focamos na organização do projeto em um monorepo, na conformidade com os padrões de diretórios de dados dos sistemas operacionais e no aprimoramento da qualidade do código Java.
+
+-----
+
+### **Adicionado**
+
+  - **Lógica de Diretório Específica por SO (Go):**
+      - Implementação do pacote `internal/env` para gerenciar a pasta `.hubsaude`.
+      - Priorização de caminhos padrão: `XDG_DATA_HOME` (Linux), `LOCALAPPDATA` (Windows) e `Application Support` (macOS).
+      - Fallback robusto para o diretório HOME do usuário.
+  - **Testes de Unidade para Ambiente:** Adição de testes em `internal/env/env_test.go` validando a descoberta de diretórios em múltiplas plataformas.
+  - **Qualidade de Código Java:**
+      - Integração de anotações `@SuppressFBWarnings` (SpotBugs) para melhor análise estática.
+      - Implementação de cópias defensivas em modelos Java (`SignatureRequest`, `ValidationConfig`) para evitar exposição de representação interna.
+
+-----
+
+### **Alterado**
+
+  - **Refatoração para Monorepo:** Movimentação do projeto Java de `assinador-java/` para `projetos/java/assinador-java/`, consolidando a estrutura de subprojetos.
+  - **Invocador de Processos (Go):** Atualização do `invoker` para localizar automaticamente o `assinador.jar` no novo layout de desenvolvimento.
+  - **Provisionamento de JDK:** Centralização do caminho do JDK gerenciado para seguir a nova lógica de diretórios do SO.
+  - **Testes de Integração:** Atualização de `test/integration_local_test.go` para suportar mocks de ambiente (`XDG_DATA_HOME`, etc.) e validar a nova estrutura de pastas.
+
+-----
+
+### **Rastreabilidade de Requisitos (Sprint 2)**
+
+  - [x] **US-01.1 (Refinamento):** Estrutura do monorepo e descoberta de artefatos.
+  - [x] **US-04.1:** Provisionamento do JDK seguindo padrões de sistema.
+  - [x] **US-02.1 & 02.2:** Modelos Java aprimorados e integrados ao fluxo local.
+
+-----
+
 ## [0.1.0] - 2026-04-14
 
 ### 🚀 Sprint 1: Fundação e Entrega Contínua

@@ -24,8 +24,10 @@ jobs:
         with:
           go-version: '1.25'
       - name: Go Vet
+        working-directory: projetos/go
         run: go vet ./...
       - name: Run Tests
+        working-directory: projetos/go
         run: go test ./cmd/assinatura/... -v
 
   # T-05.2.3: Job de Build (Geração de Artefatos)
@@ -51,23 +53,24 @@ jobs:
 
       - name: Build Java Project (assinador.jar)
         run: |
-          mvn -f assinador-java/pom.xml clean package -DskipTests
+          mvn -f projetos/java/assinador-java/pom.xml clean package -DskipTests
           mkdir -p dist
-          cp assinador-java/target/assinador.jar dist/
+          cp projetos/java/assinador-java/target/assinador.jar dist/
 
       - name: Preparar Binários Go
+        working-directory: projetos/go
         run: |
           VERSION=${{ github.ref_name }}
-          mkdir -p dist
+          mkdir -p ../../dist
           
           # Linux
-          GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=$VERSION" -o dist/assinatura-$VERSION-linux-amd64 ./cmd/assinatura
+          GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=$VERSION" -o ../../dist/assinatura-$VERSION-linux-amd64 ./cmd/assinatura
           
           # Windows
-          GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=$VERSION" -o dist/assinatura-$VERSION-windows-amd64.exe ./cmd/assinatura
+          GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=$VERSION" -o ../../dist/assinatura-$VERSION-windows-amd64.exe ./cmd/assinatura
           
           # macOS
-          GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version=$VERSION" -o dist/assinatura-$VERSION-macos-amd64 ./cmd/assinatura
+          GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version=$VERSION" -o ../../dist/assinatura-$VERSION-macos-amd64 ./cmd/assinatura
 
       - name: Gerar Checksums SHA256
         working-directory: ./dist
